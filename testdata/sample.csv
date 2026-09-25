@@ -1,0 +1,7 @@
+invoice_id,line_id,customer,description,amount,date
+INV-1001,1,Acme Corp,Widget subscription - September,129.00,2026-09-01
+INV-1001,2,Acme Corp,Support hours,60.00,2026-09-01
+INV-1004,1,Acme Corp,Widget subscription - September,129.00,2026-09-03
+INV-1010,1,Northwind Traders,Consulting - phase 2,850.00,2026-09-05
+INV-1011,1,Northwind Traders,Consulting - phase 2,850.00,2026-09-20
+INV-1015,1,Globex LLC,Onboarding fee,200.00,2026-09-10
