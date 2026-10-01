@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strings"
 	"testing"
 	"time"
 )
@@ -45,6 +46,36 @@ func TestParseAmountCentsErrors(t *testing.T) {
 	for _, in := range cases {
 		if _, err := parseAmountCents(in); err == nil {
 			t.Errorf("parseAmountCents(%q) expected error, got none", in)
+		}
+	}
+}
+
+func TestParseLineItemsReordersColumns(t *testing.T) {
+	src := "date,amount,customer,description,line_id,invoice_id\n" +
+		"2026-09-01,$129.00,Acme,Widget,1,INV-1\n"
+	items, err := parseLineItems(strings.NewReader(src))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(items) != 1 {
+		t.Fatalf("got %d items, want 1", len(items))
+	}
+	it := items[0]
+	if it.InvoiceID != "INV-1" || it.Customer != "Acme" || it.AmountCents != 12900 {
+		t.Errorf("unexpected item: %+v", it)
+	}
+}
+
+func TestParseLineItemsErrors(t *testing.T) {
+	cases := map[string]string{
+		"empty input":    "",
+		"missing column": "invoice_id,line_id,customer,description,amount\n",
+		"bad date":       "invoice_id,line_id,customer,description,amount,date\nINV-1,1,Acme,W,10,09/01/2026\n",
+		"bad amount":     "invoice_id,line_id,customer,description,amount,date\nINV-1,1,Acme,W,ten,2026-09-01\n",
+	}
+	for name, src := range cases {
+		if _, err := parseLineItems(strings.NewReader(src)); err == nil {
+			t.Errorf("%s: expected error, got none", name)
 		}
 	}
 }

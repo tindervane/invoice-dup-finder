@@ -36,15 +36,20 @@ type DupGroup struct {
 }
 
 func main() {
-	filePath := flag.String("file", "", "path to CSV file of invoice line items (required)")
+	filePath := flag.String("file", "", "path to CSV file of invoice line items, or - for stdin (default: stdin when input is piped)")
 	windowDays := flag.Int("window", 3, "max days apart for two line items with the same customer and amount to count as a possible duplicate")
 	jsonOut := flag.Bool("json", false, "print results as JSON instead of a human-readable table")
 	flag.Parse()
 
+	// With no -file, fall back to stdin only when something is piped in;
+	// otherwise the tool would sit waiting on a terminal with no prompt.
 	if *filePath == "" {
-		fmt.Fprintln(os.Stderr, "invoicedupe: -file is required")
-		flag.Usage()
-		os.Exit(2)
+		if stat, err := os.Stdin.Stat(); err != nil || stat.Mode()&os.ModeCharDevice != 0 {
+			fmt.Fprintln(os.Stderr, "invoicedupe: -file is required when stdin is not piped")
+			flag.Usage()
+			os.Exit(2)
+		}
+		*filePath = "-"
 	}
 	if *windowDays < 0 {
 		fmt.Fprintln(os.Stderr, "invoicedupe: -window must not be negative")
@@ -68,15 +73,23 @@ func main() {
 
 // readLineItems loads and validates the CSV at path. The header row is
 // required and its column order is not assumed, so columns may appear in
-// any order as long as all required names are present.
+// any order as long as all required names are present. A path of "-" reads
+// from stdin.
 func readLineItems(path string) ([]LineItem, error) {
+	if path == "-" {
+		return parseLineItems(os.Stdin)
+	}
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
 	defer f.Close()
+	return parseLineItems(f)
+}
 
-	r := csv.NewReader(f)
+// parseLineItems does the CSV parsing for readLineItems on any reader.
+func parseLineItems(src io.Reader) ([]LineItem, error) {
+	r := csv.NewReader(src)
 	header, err := r.Read()
 	if err != nil {
 		return nil, fmt.Errorf("reading header: %w", err)

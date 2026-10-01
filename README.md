@@ -44,6 +44,12 @@ Widen the window to catch charges that repeated further apart:
 go run . -file testdata/sample.csv -window 20
 ```
 
+Read the export from stdin, either by piping it in or by passing `-file -`:
+
+```
+cat testdata/sample.csv | go run .
+```
+
 Machine-readable output for piping into another tool:
 
 ```
@@ -77,7 +83,7 @@ go run . -file testdata/sample.csv -json
 
 | flag       | default | meaning                                                         |
 |------------|---------|------------------------------------------------------------------|
-| `-file`    | -       | path to the CSV export (required)                                |
+| `-file`    | stdin   | path to the CSV export, or `-` for stdin; stdin is used if piped |
 | `-window`  | `3`     | max days apart for a same customer/amount pair to count as a hit |
 | `-json`    | `false` | print JSON instead of the table                                  |
 
